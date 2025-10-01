@@ -25,7 +25,7 @@ public class Calc {
     JFrame frame = new JFrame("Calc"); //struttura di base
     JLabel DisplayLabel = new JLabel(); //usato per fare display di scritte
     JPanel DisplayPanel = new JPanel(); //metti dentro questo il label e poi questo lo metti nel frame
-    JPanel ButtonsPanel = new JPanel();
+    JPanel ButtonsPanel = new JPanel(); //per lo scompartimento sotto dei bottoni
     
     //primo numero
     String A = "0";
