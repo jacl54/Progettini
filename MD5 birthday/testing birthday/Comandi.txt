@@ -1,0 +1,3 @@
+gcc md5.c main.c //crea a.exe
+./a.exe Ciao //genera hashcode per Ciao in md5 
+system("./a.exe ciao") // esegue a.exe con input ciao come sopra
