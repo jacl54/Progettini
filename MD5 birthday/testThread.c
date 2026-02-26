@@ -14,23 +14,24 @@ pthread_mutex_t mutex;
 int end=0;
 int counter=0;
 uint8_t Testing[16];
-int i = 0;
+int i = 1;
 
-int main(){
+int main(int argc, char **argv){
     pthread_mutex_init(&mutex, NULL);
     //uint8_t accetta il == come controllo
     //nel caso di evitare caratteri speciali
     //char chars[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
     int count=0;
     //MD5String(stringa, puntatore uint8_t) è la funzione
-    md5String("Jacopo66", Testing);
+    md5String(argv[1], Testing);
     //md5String("Jacopo66", Finding);
     //print_hash(Testing);
     //printf("%d", HashCheck(Testing, Finding));
     pthread_t threads[8];
     int j=0;
     while (end!=1){
-        while(end!=1 && counter<8){
+        while(end!=1 && counter<1){
+            i++;
             if(pthread_create(&threads[j], NULL, calcHash, NULL)!=0){
                 printf("Errore");
                 return 1;
@@ -41,6 +42,10 @@ int main(){
         if(j==8){
             j=0;
         }
+        pthread_join(threads[j], NULL);
+    }
+    j=0;
+    while(j<8){
         pthread_join(threads[j], NULL);
     }
     return 0;
@@ -67,18 +72,22 @@ void print_string(char *p, int length){
 }
 
 void *calcHash(void *arg){
-    i++;
-    char* current=malloc(sizeof(char)*i);
+    char* current=malloc(sizeof(char)*(i+1));
     uint8_t Finding[16];
+    
     //sets string to '0'
     initialize_string(current, i);
+
+    //serve perchè se no realloc non setta l'ultimo carattere a 0 e md5String non sa quando fermarsi
+    current[i]=0; 
     md5String(current, Finding);
     int j = i-1;
     while(end!=1 && current[0]!=127){
-        //print_string(current, i);
+        print_string(current, i);
         if(HashCheck(Testing, Finding)){
             pthread_mutex_lock(&mutex);
             if(end==1){
+                pthread_mutex_unlock(&mutex);
                 break;
             }
             print_hash(Finding);
