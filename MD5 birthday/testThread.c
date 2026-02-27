@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+//#include <iodstream> 
 
 #include "md5.c"
+#define MAXTHREAD 8
 //#include "main.c"
 
 int HashCheck(uint8_t *a,uint8_t *b);
@@ -14,7 +16,7 @@ pthread_mutex_t mutex;
 int end=0;
 int counter=0;
 uint8_t Testing[16];
-int i = 1;
+//int i = 1;
 
 int main(int argc, char **argv){
     pthread_mutex_init(&mutex, NULL);
@@ -27,27 +29,28 @@ int main(int argc, char **argv){
     //md5String("Jacopo66", Finding);
     //print_hash(Testing);
     //printf("%d", HashCheck(Testing, Finding));
-    pthread_t threads[8];
-    int j=0;
+    pthread_t threads[100];
+    //pthread_t temp = NULL;
+    int j = 0;
+    int i = 0;
     while (end!=1){
-        while(end!=1 && counter<1){
+        while(end!=1 && counter<MAXTHREAD){
             i++;
-            if(pthread_create(&threads[j], NULL, calcHash, NULL)!=0){
+            if(pthread_create(&threads[j % 100], NULL, calcHash, (void *)(size_t)i) != 0) {
                 printf("Errore");
                 return 1;
             }
+            pthread_detach(threads[j]);
             counter++;
             j++;
         }
-        if(j==8){
+        /*
+        if(j==MAXTHREAD){
             j=0;
         }
-        pthread_join(threads[j], NULL);
+        pthread_join(threads[j], NULL);*/
     }
-    j=0;
-    while(j<8){
-        pthread_join(threads[j], NULL);
-    }
+    //free(threads);
     return 0;
 }
 
@@ -72,9 +75,9 @@ void print_string(char *p, int length){
 }
 
 void *calcHash(void *arg){
+    int i = (int)(size_t)arg;
     char* current=malloc(sizeof(char)*(i+1));
     uint8_t Finding[16];
-    
     //sets string to '0'
     initialize_string(current, i);
 
@@ -83,7 +86,7 @@ void *calcHash(void *arg){
     md5String(current, Finding);
     int j = i-1;
     while(end!=1 && current[0]!=127){
-        print_string(current, i);
+        //print_string(current, i);
         if(HashCheck(Testing, Finding)){
             pthread_mutex_lock(&mutex);
             if(end==1){
@@ -110,4 +113,6 @@ void *calcHash(void *arg){
         md5String(current, Finding);
     }
     counter--;
+    free(current);
+    //pthread_exit(NULL);
 }
