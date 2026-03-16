@@ -3,16 +3,18 @@
 #include <pthread.h>
 //#include <iodstream> 
 
-#include "md5.c"
+#include "./MD5/md5.c"
 #define MAXTHREAD 8
 //#include "main.c"
 
 int HashCheck(uint8_t *a,uint8_t *b);
 void initialize_string(char *p, int length);
 void print_string(char *p, int length);
+int StringEquals(char *a, char *b);
 
 void *calcHash(void *arg);
 pthread_mutex_t mutex;
+char *string;
 int end=0;
 int counter=0;
 uint8_t Testing[16];
@@ -26,17 +28,18 @@ int main(int argc, char **argv){
     int count=0;
     //MD5String(stringa, puntatore uint8_t) è la funzione
     md5String(argv[1], Testing);
+    string = argv[1];
     //md5String("Jacopo66", Finding);
-    //print_hash(Testing);
+    print_hash(Testing);
     //printf("%d", HashCheck(Testing, Finding));
-    pthread_t threads[100];
+    pthread_t threads[8];
     //pthread_t temp = NULL;
     int j = 0;
     int i = 0;
     while (end!=1){
         while(end!=1 && counter<MAXTHREAD){
             i++;
-            if(pthread_create(&threads[j % 100], NULL, calcHash, (void *)(size_t)i) != 0) {
+            if(pthread_create(&threads[j % 8], NULL, calcHash, (void *)(size_t)i) != 0) {
                 printf("Errore");
                 return 1;
             }
@@ -53,7 +56,20 @@ int main(int argc, char **argv){
     //free(threads);
     return 0;
 }
-
+//controlla che due stringhe siano uguali
+int StringEquals(char *a, char *b){
+    int i = 0;
+    while(a[i]!=0 && b[i]!=0){
+        if(a[i]!=b[i]){
+            return 0;
+        }
+        i++;
+    }
+    if(a[i]==0 && b[i]!=0 || a[i]!=0 && b[i]==0){
+        return 0;
+    }
+    return 1;
+}
 int HashCheck(uint8_t *a ,uint8_t *b){
     for(int i = 0; i<16; i++){
         if(a[i]!=b[i]){
@@ -86,8 +102,9 @@ void *calcHash(void *arg){
     md5String(current, Finding);
     int j = i-1;
     while(end!=1 && current[0]!=127){
+        //print_hash(Finding);
         //print_string(current, i);
-        if(HashCheck(Testing, Finding)){
+        if(HashCheck(Testing, Finding) && !StringEquals(string, current)){
             pthread_mutex_lock(&mutex);
             if(end==1){
                 pthread_mutex_unlock(&mutex);
