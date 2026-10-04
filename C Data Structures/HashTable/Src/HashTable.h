@@ -12,3 +12,8 @@ typedef struct
     int count;
     item** items;
 }table;
+
+
+table* new_table_size(int size);
+
+void insert(char* key, char* value, table* h);

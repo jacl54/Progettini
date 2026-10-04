@@ -6,7 +6,7 @@
 #include "HashTable.h"
 #include "prime.c"
 
-#define DEFAULT_SIZE 53
+#define DEFAULT_SIZE 50
 
 //necessario quando si elimina un elemento perchè altrimenti la search si ferma a metà della catena :C
 static item DELETED_ITEM = {NULL, NULL};
@@ -30,7 +30,7 @@ table* new_table(){
 }
 
 table* new_table_size(int size){
-    table* h = xmalloc(sizeof(table));
+    table* h = malloc(sizeof(table));
     h->base_size = size;
     h->size = nextPrime(size);
     h->items = calloc((size_t)h->size, sizeof(item*));
@@ -91,20 +91,24 @@ void update(table* h){
     
     int new_size = nextPrime(h->base_size);
     table* new_h = new_table_size(new_size);
-    item* current_item = NULL;
-    
+
     for(int i = 0; i<h->size; i++){
-        current_item = h->items[i];
-        if(current_item!=NULL && current_item!=DELETED_ITEM){
+        item* current_item = h->items[i];
+        if(current_item!=NULL && current_item!=&DELETED_ITEM){
             insert(current_item->key, current_item->value, new_h);
         }
     }
     
-    h->size=new_h->size;
     h->count = new_h->count;
     h->base_size = new_h->base_size;
     
-    items** temp = new_h->items;
+
+    //questo scambio è necessario ovviamente perchè se no del_table non sa quando fermarsi con la distruzione di new_h e quindi va in fuori scope
+    int temp1 = h->size;
+    h->size=new_h->size;
+    new_h->size=temp1;
+
+    item** temp = new_h->items;
     new_h->items = h->items;
     h->items = temp;
 
