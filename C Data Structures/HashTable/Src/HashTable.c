@@ -4,6 +4,9 @@
 #include <math.h>
 
 #include "HashTable.h"
+#include "prime.c"
+
+#define DEFAULT_SIZE 53
 
 //necessario quando si elimina un elemento perchè altrimenti la search si ferma a metà della catena :C
 static item DELETED_ITEM = {NULL, NULL};
@@ -22,13 +25,19 @@ static void del_item(item* i){
 }
 
 table* new_table(){
-    table* h = malloc(sizeof(table));
-    h->count = 0;
-    h->size = 53;
-    h->items = calloc((size_t)h->size, sizeof(item*));
-    //printf("creata nuova tabella con lunghezza %d\n", h->size);
+    table* h = new_table_size(DEFAULT_SIZE);
     return h;
 }
+
+table* new_table_size(int size){
+    table* h = xmalloc(sizeof(table));
+    h->base_size = size;
+    h->size = nextPrime(size);
+    h->items = calloc((size_t)h->size, sizeof(item*));
+    h->count = 0;
+    return h;
+}
+
 
 void del_table(table* h){
     for (int i = 0; i < h->size; i++ ){
@@ -76,8 +85,40 @@ int FindHash(char* key, table* h){
     }
     return -1;
 }
-void resize(table* h, int length){
-    table* h1
+
+void update(table* h){
+    if(h->base_size<DEFAULT_SIZE){return;}
+    
+    int new_size = nextPrime(h->base_size);
+    table* new_h = new_table_size(new_size);
+    item* current_item = NULL;
+    
+    for(int i = 0; i<h->size; i++){
+        current_item = h->items[i];
+        if(current_item!=NULL && current_item!=DELETED_ITEM){
+            insert(current_item->key, current_item->value, new_h);
+        }
+    }
+    
+    h->size=new_h->size;
+    h->count = new_h->count;
+    h->base_size = new_h->base_size;
+    
+    items** temp = new_h->items;
+    new_h->items = h->items;
+    h->items = temp;
+
+    del_table(new_h);
+}
+
+void up_size(table* h){
+    h->base_size*=2;
+    update(h);
+}
+
+void down_size(table* h){
+    h->base_size/=2;
+    update(h);
 }
 
 void insert(char* key, char* value, table* h){
@@ -96,7 +137,9 @@ void insert(char* key, char* value, table* h){
 
         h->items[hash]=new_item(key, value);
         h->count++;
-        
+        if((h->count*100)/h->size>70){
+            up_size(h);
+        }
     }
     
 }
@@ -116,6 +159,9 @@ void delete(char* key, table* h){
         del_item(h->items[pos]);
         h->items[pos] = &DELETED_ITEM;
         h->count--;
+        if((h->count*100)/h->size<10){
+            down_size(h);
+        }
     }
 }
 
